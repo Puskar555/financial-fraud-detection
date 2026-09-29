@@ -1,0 +1,17 @@
+numpy
+pandas
+scipy
+scikit-learn
+xgboost
+imbalanced-learn
+tensorflow
+matplotlib
+seaborn
+fastapi
+uvicorn[standard]
+pydantic
+joblib
+pytest
+httpx
+ruff
+mlflow
