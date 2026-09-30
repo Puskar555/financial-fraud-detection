@@ -18,8 +18,6 @@ No training, validation, or test dataset is loaded by this API.
 """
 
 from __future__ import annotations
-
-from collections import deque
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,7 +52,21 @@ PRODUCTION_ROOT = (
     / "artifacts"
     / "production"
 )
+import joblib
+import numpy as np
+import pandas as pd
 
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, ConfigDict, Field
+
+from backend.app.db.database import (
+    database_health_check,
+    get_prediction_stats,
+    get_recent_predictions,
+    initialize_database,
+    insert_predictions,
+)
 CURRENT_MODEL_PATH = (
     PRODUCTION_ROOT
     / "current.json"
@@ -71,7 +83,6 @@ API_VERSION = "1.0.0"
 
 MAX_BATCH_SIZE = 1000
 
-MAX_TRANSACTION_HISTORY = 1000
 
 
 # ============================================================
@@ -111,11 +122,10 @@ RUNTIME_METRICS = {
 # RECENT TRANSACTIONS
 # ============================================================
 
-TRANSACTION_LOCK = Lock()
+RUNTIME_LOCK = Lock()
 
-RECENT_TRANSACTIONS: deque = deque(
-    maxlen=MAX_TRANSACTION_HISTORY
-)
+
+
 
 
 # ============================================================
@@ -700,7 +710,7 @@ def score_transactions(
 
     responses = []
 
-    history_records = []
+    database_records = []
 
     for (
         probability,
@@ -755,9 +765,14 @@ def score_transactions(
             response
         )
 
-        history_records.append(
-            response.model_dump()
-        )
+        database_records.append(
+    {
+        **response.model_dump(),
+        "features": transactions[
+            len(database_records)
+        ].model_dump(),
+    }
+   )
 
     fraud_count = int(
         predictions.sum()
@@ -790,11 +805,20 @@ def score_transactions(
             "total_inference_ms"
         ] += inference_ms
 
-    with TRANSACTION_LOCK:
+    try:
+        insert_predictions(database_records)
 
-        RECENT_TRANSACTIONS.extend(
-            history_records
-        )
+    except Exception as exc:
+        with RUNTIME_LOCK:
+            RUNTIME_METRICS["prediction_errors"] += 1
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Prediction succeeded but "
+                "database persistence failed."
+            ),
+        ) from exc
 
     return (
         responses,
@@ -810,6 +834,21 @@ def score_transactions(
 async def lifespan(
     app: FastAPI,
 ):
+
+    print(
+        "\nInitializing prediction database..."
+    )
+
+    initialize_database()
+
+    if not database_health_check():
+        raise RuntimeError(
+            "Prediction database health check failed."
+        )
+
+    print(
+        "Prediction database ready."
+    )
 
     print(
         "\nLoading production fraud model..."
@@ -905,12 +944,17 @@ def health():
 
     ensure_model_loaded()
 
+    database_healthy = database_health_check()
+
     return {
         "status":
             "healthy",
 
         "model_loaded":
             True,
+
+        "database_healthy":
+            database_healthy,
 
         "model_name":
             CURRENT_CONFIG[
@@ -925,7 +969,6 @@ def health():
         "model_loaded_at_utc":
             MODEL_LOADED_AT,
     }
-
 
 # ============================================================
 # MODEL INFO
@@ -1082,6 +1125,8 @@ def metrics():
             RUNTIME_METRICS
         )
 
+    database_stats = get_prediction_stats()
+
     transactions_scored = snapshot[
         "transactions_scored"
     ]
@@ -1117,10 +1162,20 @@ def metrics():
         "fraud_prediction_rate":
             fraud_prediction_rate,
 
-        "history_size":
-            len(
-                RECENT_TRANSACTIONS
-            ),
+                "database_predictions":
+            database_stats["total"],
+
+        "database_fraud_predictions":
+            database_stats["fraud_predictions"],
+
+        "database_legitimate_predictions":
+            database_stats["legitimate_predictions"],
+
+        "database_average_fraud_probability":
+            database_stats["average_fraud_probability"],
+
+        "database_average_amount":
+            database_stats["average_amount"],
     }
 
 
@@ -1129,21 +1184,32 @@ def metrics():
 # ============================================================
 
 @app.get("/transactions")
-def transactions(
+def get_transactions(
     limit: int = Query(
         default=20,
         ge=1,
-        le=100,
+        le=1000,
     ),
 ):
+    """
+    Return recent persisted prediction records.
 
-    ensure_model_loaded()
+    Records are loaded from SQLite rather than
+    temporary in-memory application state.
+    """
+    try:
+        records = get_recent_predictions(limit)
 
-    with TRANSACTION_LOCK:
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to load transaction history.",
+        ) from exc
 
-        records = list(
-            RECENT_TRANSACTIONS
-        )
+    return {
+        "count": len(records),
+        "records": records,
+    }
 
     records = records[
         -limit:

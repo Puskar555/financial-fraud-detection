@@ -59,3 +59,9 @@ secrets/
 
 # Docker archives
 *.tar
+
+# Local application database
+data/database/
+*.db
+*.db-wal
+*.db-shm
