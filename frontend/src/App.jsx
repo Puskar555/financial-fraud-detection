@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./App.css";
+import PredictionForm from "./components/PredictionForm";
 
 const API_BASE_URL = "http://127.0.0.1:8001";
 
@@ -24,144 +25,146 @@ function App() {
   const [healthError, setHealthError] = useState("");
 
   // =======================================================
-  // LOAD TRANSACTIONS
+  // API LOADERS
+  // =======================================================
+
+  const loadTransactions = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/transactions?limit=10`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Transactions request failed: HTTP ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setTransactions(data.records ?? []);
+      setTransactionsError("");
+    } catch (error) {
+      console.error(
+        "Failed to load transactions:",
+        error
+      );
+
+      setTransactionsError(
+        "Unable to load transaction history."
+      );
+    } finally {
+      setTransactionsLoading(false);
+    }
+  }, []);
+
+  const loadMetrics = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/metrics`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Metrics request failed: HTTP ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setMetrics(data);
+      setMetricsError("");
+    } catch (error) {
+      console.error(
+        "Failed to load metrics:",
+        error
+      );
+
+      setMetricsError("Metrics unavailable");
+    }
+  }, []);
+
+  const loadModelInfo = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/model/info`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Model request failed: HTTP ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setModelInfo(data);
+      setModelError("");
+    } catch (error) {
+      console.error(
+        "Failed to load model information:",
+        error
+      );
+
+      setModelError(
+        "Model information unavailable"
+      );
+    }
+  }, []);
+
+  const loadHealth = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/health`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Health request failed: HTTP ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      setHealth(data);
+      setHealthError("");
+    } catch (error) {
+      console.error(
+        "Failed to load system health:",
+        error
+      );
+
+      setHealthError("System unavailable");
+    }
+  }, []);
+
+  // =======================================================
+  // INITIAL DATA LOAD
   // =======================================================
 
   useEffect(() => {
-    async function loadTransactions() {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/transactions?limit=10`
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            `Transactions request failed: HTTP ${response.status}`
-          );
-        }
-
-        const data = await response.json();
-
-        setTransactions(data.records ?? []);
-        setTransactionsError("");
-      } catch (error) {
-        console.error(
-          "Failed to load transactions:",
-          error
-        );
-
-        setTransactionsError(
-          "Unable to load transaction history."
-        );
-      } finally {
-        setTransactionsLoading(false);
-      }
-    }
-
     loadTransactions();
-  }, []);
-
-  // =======================================================
-  // LOAD METRICS
-  // =======================================================
-
-  useEffect(() => {
-    async function loadMetrics() {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/metrics`
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            `Metrics request failed: HTTP ${response.status}`
-          );
-        }
-
-        const data = await response.json();
-
-        setMetrics(data);
-        setMetricsError("");
-      } catch (error) {
-        console.error(
-          "Failed to load metrics:",
-          error
-        );
-
-        setMetricsError("Metrics unavailable");
-      }
-    }
-
     loadMetrics();
-  }, []);
-
-  // =======================================================
-  // LOAD MODEL INFORMATION
-  // =======================================================
-
-  useEffect(() => {
-    async function loadModelInfo() {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/model/info`
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            `Model request failed: HTTP ${response.status}`
-          );
-        }
-
-        const data = await response.json();
-
-        setModelInfo(data);
-        setModelError("");
-      } catch (error) {
-        console.error(
-          "Failed to load model information:",
-          error
-        );
-
-        setModelError("Model information unavailable");
-      }
-    }
-
     loadModelInfo();
-  }, []);
-
-  // =======================================================
-  // LOAD SYSTEM HEALTH
-  // =======================================================
-
-  useEffect(() => {
-    async function loadHealth() {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/health`
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            `Health request failed: HTTP ${response.status}`
-          );
-        }
-
-        const data = await response.json();
-
-        setHealth(data);
-        setHealthError("");
-      } catch (error) {
-        console.error(
-          "Failed to load system health:",
-          error
-        );
-
-        setHealthError("System unavailable");
-      }
-    }
-
     loadHealth();
-  }, []);
+  }, [
+    loadTransactions,
+    loadMetrics,
+    loadModelInfo,
+    loadHealth,
+  ]);
+
+  // =======================================================
+  // REFRESH AFTER A NEW PREDICTION
+  // =======================================================
+
+  const handlePredictionComplete = async () => {
+    await Promise.all([
+      loadTransactions(),
+      loadMetrics(),
+      loadHealth(),
+    ]);
+  };
 
   // =======================================================
   // DERIVED VALUES
@@ -376,26 +379,11 @@ function App() {
               </span>
             </div>
 
-            <div className="prediction-placeholder">
-              <div className="shield">
-                ✓
-              </div>
-
-              <h4>
-                Fraud Detection Engine Ready
-              </h4>
-
-              <p>
-                Submit transaction features to
-                the production model and receive
-                a fraud probability and
-                classification.
-              </p>
-
-              <button type="button">
-                Predict Transaction
-              </button>
-            </div>
+            <PredictionForm
+              onPredictionComplete={
+                handlePredictionComplete
+              }
+            />
           </article>
 
           {/* MODEL STATUS */}
