@@ -1,15 +1,4 @@
 """
-Task 17 — FastAPI Fraud Detection Backend
-
-Endpoints
----------
-GET  /health
-GET  /model/info
-GET  /metrics
-GET  /transactions
-POST /predict
-POST /predict/batch
-
 The API loads the versioned production candidate created in Task 16.
 
 IMPORTANT
@@ -18,24 +7,31 @@ No training, validation, or test dataset is loaded by this API.
 """
 
 from __future__ import annotations
+
+import hashlib
+import json
+import time
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
 from typing import Any
-import hashlib
-import json
-import time
-import uuid
 
 import joblib
 import numpy as np
 import pandas as pd
-
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.app.db.database import (
+    database_health_check,
+    get_prediction_stats,
+    get_recent_predictions,
+    initialize_database,
+    insert_predictions,
+)
 
 # ============================================================
 # PATHS
@@ -52,26 +48,11 @@ PRODUCTION_ROOT = (
     / "artifacts"
     / "production"
 )
-import joblib
-import numpy as np
-import pandas as pd
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, ConfigDict, Field
-
-from backend.app.db.database import (
-    database_health_check,
-    get_prediction_stats,
-    get_recent_predictions,
-    initialize_database,
-    insert_predictions,
-)
 CURRENT_MODEL_PATH = (
     PRODUCTION_ROOT
     / "current.json"
 )
-
 
 # ============================================================
 # APPLICATION CONFIGURATION
@@ -430,24 +411,15 @@ def load_production_model() -> None:
             "predict_proba()."
         )
 
-    if hasattr(
-        model,
-        "n_features_in_",
+    if (
+        hasattr(model, "n_features_in_")
+        and int(model.n_features_in_)
+        != len(expected_features)
     ):
-
-        if (
-            int(
-                model.n_features_in_
-            )
-            != len(
-                expected_features
-            )
-        ):
-
-            raise ValueError(
-                "Production model feature-count "
-                "mismatch."
-            )
+        raise ValueError(
+            "Production model feature-count "
+            "mismatch."
+        )
 
     # --------------------------------------------------------
     # CROSS-CHECK CURRENT VS METADATA

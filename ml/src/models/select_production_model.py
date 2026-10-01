@@ -16,14 +16,13 @@ IMPORTANT
 - test.csv remains untouched for final evaluation.
 """
 
-from pathlib import Path
-from datetime import datetime, timezone
 import hashlib
 import json
 import shutil
+from datetime import datetime, timezone
+from pathlib import Path
 
 import joblib
-
 
 # ============================================================
 # CONFIGURATION
@@ -91,17 +90,16 @@ def validate_xgboost_model(model):
                 f"required method: {method}"
             )
 
-    if hasattr(model, "n_features_in_"):
-
-        if model.n_features_in_ != len(
-            EXPECTED_FEATURES
-        ):
-
-            raise ValueError(
-                "Model feature count mismatch. "
-                f"Expected {len(EXPECTED_FEATURES)}, "
-                f"got {model.n_features_in_}."
-            )
+    if (
+    hasattr(model, "n_features_in_")
+    and model.n_features_in_
+    != len(EXPECTED_FEATURES)
+    ):
+        raise ValueError(
+        "Model feature count mismatch. "
+        f"Expected {len(EXPECTED_FEATURES)}, "
+        f"got {model.n_features_in_}."
+    )
 
 
 # ============================================================

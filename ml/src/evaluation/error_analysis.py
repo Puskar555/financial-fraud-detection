@@ -16,22 +16,20 @@ IMPORTANT
 - No threshold is declared a production threshold here.
 """
 
-from pathlib import Path
 import json
+from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
 from sklearn.metrics import (
     average_precision_score,
     confusion_matrix,
+    f1_score,
     precision_score,
     recall_score,
-    f1_score,
 )
-
 
 # ============================================================
 # PROJECT PATHS
@@ -548,7 +546,7 @@ def summarize_false_negatives(
 
     return {
         "fn_count":
-            int(len(fn)),
+            len(fn),
 
         "fn_amount_sum":
             float(
@@ -611,7 +609,7 @@ def summarize_false_positives(
 
     return {
         "fp_count":
-            int(len(fp)),
+            len(fp),
 
         "fp_amount_sum":
             float(
@@ -903,13 +901,9 @@ def main():
             fn_summary
         )
 
-        fp_summary = (
-            summarize_false_posititives
-            if False
-            else summarize_false_positives
-        )(
-            table
-        )
+        fp_summary = summarize_false_positives(
+    table
+ )
 
         fp_summary[
             "model"

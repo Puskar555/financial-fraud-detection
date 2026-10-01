@@ -18,17 +18,16 @@ Methodology
 - Precision, recall, F1, FP and FN depend on threshold.
 """
 
-from pathlib import Path
 import ast
 import json
 import random
 import time
+from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     average_precision_score,
@@ -38,7 +37,6 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-
 from xgboost import XGBClassifier
 
 from ml.src.features.preprocessing import (
@@ -46,7 +44,6 @@ from ml.src.features.preprocessing import (
     build_preprocessor,
     validate_features,
 )
-
 
 # ============================================================
 # CONFIGURATION
@@ -754,7 +751,7 @@ def train_neural_network(
         (list, tuple),
     ):
 
-        raise ValueError(
+        raise TypeError(
             "Neural-network hidden_layers "
             "must be a list or tuple."
         )

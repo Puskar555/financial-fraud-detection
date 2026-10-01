@@ -27,16 +27,15 @@ Important methodology
 - PR-AUC is the primary model-comparison metric.
 """
 
-from pathlib import Path
 import gc
 import json
 import random
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -48,7 +47,6 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.model_selection import StratifiedKFold
-
 from xgboost import XGBClassifier
 
 from ml.src.features.preprocessing import (
@@ -56,7 +54,6 @@ from ml.src.features.preprocessing import (
     build_preprocessor,
     validate_features,
 )
-
 
 # ============================================================
 # CONFIGURATION

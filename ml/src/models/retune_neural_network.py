@@ -22,17 +22,16 @@ For every hyperparameter configuration and outer CV fold:
 validation.csv and test.csv are never loaded.
 """
 
-from pathlib import Path
 import ast
 import gc
 import json
 import random
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
 from sklearn.metrics import average_precision_score
 from sklearn.model_selection import (
     StratifiedKFold,
@@ -40,7 +39,6 @@ from sklearn.model_selection import (
 )
 
 from ml.src.features.preprocessing import build_preprocessor
-
 
 # ============================================================
 # CONFIGURATION

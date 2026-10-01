@@ -35,7 +35,14 @@ ml/artifacts/*
 *.h5
 *.keras
 *.onnx
-
+# Versioned production model artifacts
+!artifacts/
+!artifacts/production/
+!artifacts/production/current.json
+!artifacts/production/xgboost/
+!artifacts/production/xgboost/1.0.0/
+!artifacts/production/xgboost/1.0.0/model.joblib
+!artifacts/production/xgboost/1.0.0/metadata.json
 # Logs
 *.log
 logs/
@@ -65,3 +72,20 @@ data/database/
 *.db
 *.db-wal
 *.db-shm
+# ============================================================
+# Generated experiment artifacts
+# ============================================================
+
+artifacts/cross_validation/
+artifacts/error_analysis/
+artifacts/hyperparameter_tuning/
+artifacts/models/
+artifacts/threshold_optimization/
+
+# Keep production model artifacts
+!artifacts/production/
+!artifacts/production/current.json
+!artifacts/production/xgboost/
+!artifacts/production/xgboost/1.0.0/
+!artifacts/production/xgboost/1.0.0/model.joblib
+!artifacts/production/xgboost/1.0.0/metadata.json

@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+datasci/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Development artifacts
+artifacts/cross_validation/
+artifacts/error_analysis/
+artifacts/hyperparameter_tuning/
+artifacts/models/
+artifacts/preprocessing/
+artifacts/threshold_optimization/
+
+# ML source/training files
+ml/
+
+# Data
+data/
+*.csv
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+temp_*
+*.tmp

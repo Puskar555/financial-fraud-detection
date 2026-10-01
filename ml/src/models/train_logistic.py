@@ -20,14 +20,13 @@ IMPORTANT:
 - Threshold optimization will be performed later.
 """
 
-from pathlib import Path
 import json
 import time
+from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
-
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     average_precision_score,
@@ -44,13 +43,11 @@ from sklearn.pipeline import Pipeline
 #
 # Run this script from the PROJECT ROOT:
 # python -m ml.src.models.train_logistic
-
 from ml.src.features.preprocessing import (
     TARGET_COLUMN,
     build_preprocessor,
     validate_features,
 )
-
 
 # ============================================================
 # CONFIGURATION
@@ -471,13 +468,9 @@ def main():
         training_seconds
     )
 
-    metrics["training_rows"] = int(
-        len(X_train)
-    )
+    metrics["training_rows"] = len(X_train)
 
-    metrics["validation_rows"] = int(
-        len(X_val)
-    )
+    metrics["validation_rows"] = len(X_val)
 
     metrics["training_fraud"] = int(
         y_train.sum()

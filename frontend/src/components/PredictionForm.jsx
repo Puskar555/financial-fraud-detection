@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-const API_BASE_URL = "http://127.0.0.1:8001";
+const API_BASE_URL = "/api";
 
 const FEATURE_NAMES = [
   "Time",
@@ -11,7 +11,7 @@ const FEATURE_NAMES = [
 const createEmptyForm = () =>
   Object.fromEntries(FEATURE_NAMES.map((feature) => [feature, ""]));
 
-const SAMPLE_TRANSACTION = {
+const LEGITIMATE_TEST_TRANSACTION = {
   Time: 56861.0,
   V1: -1.6209258457,
   V2: 1.4084276234,
@@ -34,7 +34,7 @@ const SAMPLE_TRANSACTION = {
   V19: 0.0549112897,
   V20: -0.3030692359,
   V21: 0.031090404,
-  V22: -0.1073176961,
+  V22: -0.08177061323,
   V23: -0.0947172706,
   V24: 0.1437349691,
   V25: -0.1273035947,
@@ -42,6 +42,39 @@ const SAMPLE_TRANSACTION = {
   V27: -0.5452158637,
   V28: -0.0403887145,
   Amount: 9.65,
+};
+
+const FRAUD_TEST_TRANSACTION = {
+  Time: 50808.0,
+  V1: -9.1697898239,
+  V2: 7.092196801,
+  V3: -12.3540368689,
+  V4: 4.2430689738,
+  V5: -7.1764377548,
+  V6: -3.3866180484,
+  V7: -8.0580119466,
+  V8: 6.4429086638,
+  V9: -2.4129866023,
+  V10: -6.1349068872,
+  V11: 2.8266712282,
+  V12: -6.3098427773,
+  V13: -0.6230023858,
+  V14: -7.2798692194,
+  V15: 0.924233226,
+  V16: -4.2155371348,
+  V17: -7.171672415,
+  V18: -2.5503366846,
+  V19: 0.5963643205,
+  V20: 0.8166516618,
+  V21: 0.9261569611,
+  V22: 0.9261569611,
+  V23: -0.1504344157,
+  V24: -0.0393830597,
+  V25: 0.485639754,
+  V26: -0.264324609,
+  V27: 1.1596904601,
+  V28: 0.2327580884,
+  Amount: 99.99,
 };
 
 function PredictionForm({ onPredictionComplete }) {
@@ -65,17 +98,26 @@ function PredictionForm({ onPredictionComplete }) {
     }));
   };
 
-  const loadSampleTransaction = () => {
-    const sampleAsStrings = Object.fromEntries(
-      Object.entries(SAMPLE_TRANSACTION).map(([key, value]) => [
+  const loadTransaction = (transaction) => {
+    const transactionAsStrings = Object.fromEntries(
+      Object.entries(transaction).map(([key, value]) => [
         key,
         String(value),
       ])
     );
 
-    setFormData(sampleAsStrings);
+    setFormData(transactionAsStrings);
     setPredictionResult(null);
     setError("");
+    setShowAdvanced(true);
+  };
+
+  const loadLegitimateTransaction = () => {
+    loadTransaction(LEGITIMATE_TEST_TRANSACTION);
+  };
+
+  const loadFraudTransaction = () => {
+    loadTransaction(FRAUD_TEST_TRANSACTION);
   };
 
   const clearForm = () => {
@@ -190,26 +232,40 @@ function PredictionForm({ onPredictionComplete }) {
       <div className="prediction-form-header">
         <div>
           <p className="section-eyebrow">REAL-TIME INFERENCE</p>
+
           <h2>Analyze Transaction</h2>
+
           <p className="prediction-form-description">
             Submit the 30 model features to the production fraud detection API.
           </p>
         </div>
 
-        <button
-          type="button"
-          className="sample-button"
-          onClick={loadSampleTransaction}
-          disabled={isSubmitting}
-        >
-          Load Test Transaction
-        </button>
+        <div className="sample-button-group">
+          <button
+            type="button"
+            className="sample-button"
+            onClick={loadLegitimateTransaction}
+            disabled={isSubmitting}
+          >
+            Load Legitimate Test
+          </button>
+
+          <button
+            type="button"
+            className="sample-button"
+            onClick={loadFraudTransaction}
+            disabled={isSubmitting}
+          >
+            Load Fraud Test
+          </button>
+        </div>
       </div>
 
       <form className="prediction-form" onSubmit={handleSubmit}>
         <div className="primary-feature-grid">
           <label className="prediction-field">
             <span>Time</span>
+
             <input
               type="number"
               step="any"
@@ -223,6 +279,7 @@ function PredictionForm({ onPredictionComplete }) {
 
           <label className="prediction-field">
             <span>Amount</span>
+
             <input
               type="number"
               step="any"
@@ -242,6 +299,7 @@ function PredictionForm({ onPredictionComplete }) {
             onClick={() => setShowAdvanced((previous) => !previous)}
           >
             <span>Model Features V1–V28</span>
+
             <span>{showAdvanced ? "Hide" : "Show"}</span>
           </button>
 
@@ -250,6 +308,7 @@ function PredictionForm({ onPredictionComplete }) {
               {advancedFeatures.map((feature) => (
                 <label className="prediction-field" key={feature}>
                   <span>{feature}</span>
+
                   <input
                     type="number"
                     step="any"
@@ -293,12 +352,15 @@ function PredictionForm({ onPredictionComplete }) {
       {predictionResult && (
         <div
           className={`prediction-result ${
-            isFraud ? "prediction-result-fraud" : "prediction-result-legitimate"
+            isFraud
+              ? "prediction-result-fraud"
+              : "prediction-result-legitimate"
           }`}
         >
           <div className="prediction-result-heading">
             <div>
               <p className="section-eyebrow">MODEL DECISION</p>
+
               <h3>{predictionResult.label?.toUpperCase()}</h3>
             </div>
 
@@ -310,6 +372,7 @@ function PredictionForm({ onPredictionComplete }) {
           <div className="prediction-result-grid">
             <div>
               <span>Fraud Probability</span>
+
               <strong>
                 {fraudProbabilityPercent !== null
                   ? `${fraudProbabilityPercent.toFixed(6)}%`
@@ -319,6 +382,7 @@ function PredictionForm({ onPredictionComplete }) {
 
             <div>
               <span>Decision Threshold</span>
+
               <strong>
                 {predictionResult.threshold !== undefined
                   ? Number(predictionResult.threshold).toFixed(3)
@@ -328,6 +392,7 @@ function PredictionForm({ onPredictionComplete }) {
 
             <div>
               <span>Model</span>
+
               <strong>
                 {predictionResult.model_name?.toUpperCase()}{" "}
                 {predictionResult.model_version}
@@ -336,6 +401,7 @@ function PredictionForm({ onPredictionComplete }) {
 
             <div>
               <span>Transaction ID</span>
+
               <strong className="transaction-id-value">
                 {predictionResult.transaction_id}
               </strong>
@@ -345,7 +411,9 @@ function PredictionForm({ onPredictionComplete }) {
           <p className="prediction-result-time">
             Processed:{" "}
             {predictionResult.timestamp_utc
-              ? new Date(predictionResult.timestamp_utc).toLocaleString()
+              ? new Date(
+                  predictionResult.timestamp_utc
+                ).toLocaleString()
               : "—"}
           </p>
         </div>

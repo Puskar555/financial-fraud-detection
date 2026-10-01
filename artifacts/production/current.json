@@ -1,0 +1,10 @@
+{
+    "model_name": "xgboost",
+    "model_version": "1.0.0",
+    "stage": "production_candidate",
+    "artifact_directory": "xgboost/1.0.0",
+    "model_file": "model.joblib",
+    "metadata_file": "metadata.json",
+    "decision_threshold": 0.13,
+    "model_sha256": "ec8c3ac94aeb1c3931832809d131317cf97240c03c9a9fb916c87462aa2ff1a6"
+}

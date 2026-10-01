@@ -3,7 +3,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 TARGET_COLUMN = "Class"
 
 EXPECTED_COLUMNS = [
